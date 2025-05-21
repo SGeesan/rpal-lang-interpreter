@@ -1,27 +1,50 @@
 package com.rpal.lex;
 
 public class Token {
+    // Token is simply a pair of type and value(eg: <IDENTIFIER: Dog>)
+    private String type; // eg: IDENTIFIER
+    private String value; // eg: Dog
+    
+    
+    /** 
+     * @return String
+     */
     public String getType() {
-        // TODO Auto-generated method stub
-        return null;
+        return type;
     }
-
+    
+    
+    /** 
+     * @return String
+     */
     public String getValue() {
-        // TODO Auto-generated method stub
-        return null;
+        return value;
     }
+    
 
+    /** 
+     * @param type
+     */
     public void setType(String type) {
-        // TODO Auto-generated method stub
+        this.type = type;
     }
 
+    
+    /** 
+     * @param value
+     */
     public void setValue(String value) {
-        // TODO Auto-generated method stub
+        this.value = value;
     }
-
+    
+    
+    /** 
+     * for debugging purposes
+     * @return String
+     */
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
-        return null;
+        return "<" + type + ": " + value + ">";
     }
+    
 }
