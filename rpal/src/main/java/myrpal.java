@@ -1,4 +1,4 @@
-package com.rpal;
+
 
 import java.io.File;
 import java.util.List;
@@ -8,7 +8,7 @@ import com.rpal.lex.Token;
 import com.rpal.parser.AST;
 import com.rpal.parser.Parser;
 
-public class Main {
+public class myrpal {
     public static void main(String[] args) {
         // Check if a filename is given
         if (args.length < 1) {
