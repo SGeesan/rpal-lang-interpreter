@@ -1,0 +1,1 @@
+let rec f n = n eq 0 -> 1 | f (n-1) * n in f(1),f(3)
