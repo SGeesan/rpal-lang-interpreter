@@ -5,7 +5,9 @@ import java.util.List;
 import com.rpal.cse.CSNode;
 
 public class AST {
+	public AST(ASTNode root){
 
+	}
     public void standardize() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'standardize'");
