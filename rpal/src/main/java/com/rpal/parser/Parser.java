@@ -47,6 +47,14 @@ public class Parser {
         }
     }
 
+    private void ensureTypeIn(Token token, String... types) {
+        // ensure token's type matches one of the expected types, else throw
+        if (!TypeIn(token, types)) {
+            throw new ParserException("Expected type: " + String.join(" / ", types) +
+                    " but found \"" + token.getType() + "\"");
+        }
+    }
+
     private boolean TypeIn(Token token, String... types) {
         // check if token's type is one of the expected types
         for (String type : types) {
@@ -74,21 +82,26 @@ public class Parser {
 
     }
 
-    public ASTNode rightAsTree(ASTNode root, int operators){
+    public void rightAsTree(int operators) {
         /*
-         * Converts a given binary tree into right associative
+         * Converts a the stack top binary tree into right associative
          */
-        if (operators>1) {
-            ASTNode leftResult = rightAsTree(root.getLeft(), operators-1);
-            ASTNode rightEnd = root.getLeft();
-            rightEnd.getLeft().getRight().setRight(root.getRight());
-            root.setLeft(rightEnd.getLeft().getRight());
-            leftResult.getLeft().setRight(root);
-            return leftResult;
-        } else {
-            return root;
+        ASTNode root = stack.pop();
+        ASTNode result = root;
+        while (operators >= 2) {
+            ASTNode right = result.getLeft().getRight();
+            ASTNode left = result.getLeft().getLeft().getRight();
+            ASTNode nextResult = result.getLeft();
+            nextResult.setRight(null);
+            result.setLeft(left);
+            left.setRight(right);
+            nextResult.getLeft().setRight(result);
+            result = nextResult;
+            operators--;
         }
+        stack.add(result);
     }
+
     // Recursive Parser processes:
     private void E() {
         Token next = peek();
@@ -361,33 +374,78 @@ public class Parser {
                     buildTree("/", 2);
                 }
             }
-            ensureValueIn(peek(), "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&", "or", "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
-        }
-        else{
+            ensureValueIn(peek(), "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&", "or", "->",
+                    "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
+        } else {
             throw new ParserException("Parse failed at: " + peek().getValue());
         }
     }
 
     private void Af() {
         Ap();
+        int N = 0;
+        while (ValueIn(peek(), "**")) {
+            tokens.remove(0);
+            Ap();
+            buildTree("**", 2);
+            N++;
+        }
+        if (N > 1) {
+            rightAsTree(N);
+        }
+        ensureValueIn(peek(), "*", "/", "**", "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&",
+                "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
     }
 
     private void Ap() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'A'");
+        R();
+        while (ValueIn(peek(), "@")) {
+            tokens.remove(0);
+            ensureTypeIn(peek(), "IDENTIFIER");
+            stack.push(new LeafNode("IDENTIFIER", tokens.remove(0).getValue()));
+            R();
+            buildTree("@", 3);
+        }
+        ensureValueIn(peek(), "*", "/", "**", "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&",
+                "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
     }
 
     private void R() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'A'");
+        Rn();
+        while(TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") || 
+        ValueIn(peek(), "true", "false", "nil", "(", "dummy")
+        ){
+            // R -> R Rn => gamma
+            Rn();
+            buildTree("gamma", 2);
+        }
     }
 
     private void Rn() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'A'");
+        if (TypeIn(peek(),"IDENTIFIER","INTEGER","STRING")) {
+            stack.push(new LeafNode(peek().getType(), peek().getValue()));
+            tokens.remove(0);
+        } else if (ValueIn(peek(), "true", "false", "nil", "dummy")){
+            stack.push(new LeafNode(peek().getValue().toUpperCase(), peek().getValue()));
+            tokens.remove(0);
+        }
+        else if(ValueIn(peek(), "(")){
+            // Rn -> (E)
+            tokens.remove(0);
+            E();
+            ensureValueIn(tokens.remove(0), ")");
+        }
+        else{
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+        
     }
 
     private void D() {
+        throw new UnsupportedOperationException("Unimplemented method 'D'");
+    }
+
+    private void Da() {
         throw new UnsupportedOperationException("Unimplemented method 'D'");
     }
 
@@ -396,8 +454,16 @@ public class Parser {
         throw new UnsupportedOperationException("Unimplemented method 'Dr'");
     }
 
+    private void Db() {
+        throw new UnsupportedOperationException("Unimplemented method 'D'");
+    }
+
     private void Vb() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'Vb'");
+    }
+
+    private void V1() {
+        throw new UnsupportedOperationException("Unimplemented method 'D'");
     }
 }

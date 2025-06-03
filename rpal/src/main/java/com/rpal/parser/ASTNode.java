@@ -48,4 +48,29 @@ public class ASTNode {
         tempNode.setRight(newNode);
     }
 
+    public void printTree() {
+        printTreeHelper(this, 0);
+    }
+    
+    private void printTreeHelper(ASTNode node, int depth) {
+        if (node == null) {
+            return;
+        }
+    
+        // Indent according to depth
+        for (int i = 0; i < depth; i++) {
+            System.out.print(". ");
+        }
+    
+        // Print node type
+        System.out.println(node.getType());
+    
+        // Recur on the child (left node = first child)
+        printTreeHelper(node.getLeft(), depth + 1);
+    
+        // Recur on the sibling (right node = next sibling)
+        printTreeHelper(node.getRight(), depth);
+    }
+    
+
 }
