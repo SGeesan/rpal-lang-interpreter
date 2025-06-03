@@ -23,7 +23,7 @@ public class Parser {
     private Token peek() {
         /* peek at the first token on the list */
         if (tokens.size() == 0) {
-            throw new RuntimeException("Tokenizer error. EoF not found");
+            throw new RuntimeException("Tokenizer error. EOF not found");
         }
         return tokens.get(0);
     }
@@ -57,14 +57,6 @@ public class Parser {
         return false;
     }
 
-    private void ensureTypeIn(Token token, String... types) {
-        // ensure token's type matches one of the expected types, else throw
-        if (!TypeIn(token, types)) {
-            throw new ParserException("Expected type: " + String.join(" / ", types) +
-                    " but found \"" + token.getType() + "\"");
-        }
-    }
-
     private void buildTree(String type, int n) {
         /* builds bottom up trees and adds to the stack */
         ASTNode p = null;
@@ -82,7 +74,22 @@ public class Parser {
 
     }
 
-    // Recursive Parser processes
+    public ASTNode rightAsTree(ASTNode root, int operators){
+        /*
+         * Converts a given binary tree into right associative
+         */
+        if (operators>1) {
+            ASTNode leftResult = rightAsTree(root.getLeft(), operators-1);
+            ASTNode rightEnd = root.getLeft();
+            rightEnd.getLeft().getRight().setRight(root.getRight());
+            root.setLeft(rightEnd.getLeft().getRight());
+            leftResult.getLeft().setRight(root);
+            return leftResult;
+        } else {
+            return root;
+        }
+    }
+    // Recursive Parser processes:
     private void E() {
         Token next = peek();
         if (next.getValue().equals("let")) {
@@ -95,22 +102,302 @@ public class Parser {
             buildTree("let", 2);
         } else if (next.getValue().equals("fn")) {
             // E -> 'fn' Vb+ '.' E => ’lambda’
+            tokens.remove(0);
+            Vb();
+            int N = 1;
+            while (TypeIn(peek(), "IDENTIFIER") || ValueIn(peek(), "(")) {
+                Vb();
+                N++;
+            }
+            ensureValueIn(peek(), ".");
+            tokens.remove(0);
+            E();
+            buildTree("lambda", N + 1);
+
         } else if (TypeIn(next, "IDENTIFIER", "INTEGER", "STRING") ||
                 ValueIn(next, "true", "false", "nil", "(", "dummy", "+", "-", "not")) {
             // E -> Ew
-            EW();
+            Ew();
         } else {
             throw new ParserException("Parse failed at: " + next.getValue());
         }
     }
 
-    private void EW() {
+    private void Ew() {
+        Token next = peek();
+        if (TypeIn(next, "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(next, "true", "false", "nil", "(", "dummy", "+", "-", "not")) {
+            T();
+            if (ValueIn(peek(), "where")) {
+                // Ew -> T where Dr => where
+                tokens.remove(0);
+                Dr();
+                buildTree("where", 2);
+            } else {
+                // Ew -> T
+                ensureValueIn(peek(), "EOF", ")", "and", "within", "in");
+            }
+        } else {
+            throw new ParserException("Parse failed at: " + next.getValue());
+        }
+    }
+
+    private void T() {
+        Ta();
+        if (ValueIn(peek(), ",")) {
+            // T -> Ta (, Ta)+
+            tokens.remove(0);
+            Ta();
+            int N = 2;
+            while (ValueIn(peek(), ",")) {
+                tokens.remove(0);
+                Ta();
+                N++;
+            }
+            buildTree("tau", N);
+            ensureValueIn(peek(), "where", "EOF", ")", "and", "within", "in");
+        }
+        // else: T -> Ta
+
+    }
+
+    private void Ta() {
+        if (TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(peek(), "true", "false", "nil", "(", "dummy", "+", "-", "not")) {
+            Tc();
+            if (ValueIn(peek(), "aug")) {
+                // Ta -> Ta aug Tc
+                tokens.remove(0);
+                Tc();
+                buildTree("aug", 2);
+                while (ValueIn(peek(), "aug")) {
+                    tokens.remove(0);
+                    Tc();
+                    buildTree("aug", 2);
+                }
+            }
+            // Ta -> Tc
+            ensureValueIn(peek(), ",", "where", "EOF", ")", "and", "within", "in");
+
+        } else {
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+    }
+
+    private void Tc() {
+        if (TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(peek(), "true", "false", "nil", "(", "dummy", "+", "-", "not")) {
+            B();
+            if (ValueIn(peek(), "->")) {
+                // Tc -> B -> Tc ’|’ Tc
+                tokens.remove(0);
+                Tc();
+                ensureValueIn(peek(), "|");
+                tokens.remove(0);
+                Tc();
+            } else {
+                // Tc -> B
+                ensureValueIn(peek(), "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+            }
+        } else {
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+    }
+
+    private void B() {
+        if (TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(peek(), "true", "false", "nil", "(", "dummy", "+", "-", "not")) {
+            Bt();
+            if (ValueIn(peek(), "or")) {
+                // B -> B or Bt
+                tokens.remove(0);
+                Bt();
+                buildTree("or", 2);
+                while (ValueIn(peek(), "or")) {
+                    tokens.remove(0);
+                    Bt();
+                    buildTree("or", 2);
+                }
+            }
+            // B -> Bt
+            ensureValueIn(peek(), "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+
+        } else {
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+    }
+
+    private void Bt() {
+        if (TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(peek(), "true", "false", "nil", "(", "dummy", "+", "-", "not")) {
+            Bs();
+            if (ValueIn(peek(), "&")) {
+                // Bt -> Bt & Bs
+                tokens.remove(0);
+                Bs();
+                buildTree("&", 2);
+                while (ValueIn(peek(), "&")) {
+                    tokens.remove(0);
+                    Bs();
+                    buildTree("&", 2);
+                }
+            }
+            // Bt -> Bs
+            ensureValueIn(peek(), "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+
+        } else {
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+
+    }
+
+    private void Bs() {
+        if (ValueIn(peek(), "not")) {
+            // Bs -> not Bp
+            tokens.remove(0);
+            Bp();
+            buildTree("not", 1);
+        } else {
+            // Bs -> Bp
+            Bp();
+        }
+    }
+
+    private void Bp() {
+        if (TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(peek(), "true", "false", "nil", "(", "dummy", "+", "-")) {
+            A();
+            switch (peek().getValue()) {
+                case "gr": // Bp ->A(’gr’ | ’>’ ) A
+                case ">":
+                    tokens.remove(0);
+                    A();
+                    buildTree("gr", 2);
+                    break;
+
+                case "ge":
+                case ">=":// Bp -> A (’ge’ | ’>=’) A
+                    tokens.remove(0);
+                    A();
+                    buildTree("ge", 2);
+                    break;
+
+                case "ls":
+                case "<":// Bp -> A (’ls’ | ’<’) A
+                    tokens.remove(0);
+                    A();
+                    buildTree("ls", 2);
+                    break;
+
+                case "le":
+                case "<=":// Bp -> A (’le’ | ’<=’) A
+                    tokens.remove(0);
+                    A();
+                    buildTree("le", 2);
+                    break;
+
+                case "eq":// Bp -> A ’eq’ A
+                    tokens.remove(0);
+                    A();
+                    buildTree("eq", 2);
+                    break;
+
+                case "ne":// Bp -> A ’ne’ A
+                    tokens.remove(0);
+                    A();
+                    buildTree("ne", 2);
+                    break;
+
+                default:
+                    // Bp -> A
+                    ensureValueIn(peek(), "&", "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+            }
+
+        } else {
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+    }
+
+    private void A() {
+        if (ValueIn(peek(), "-")) {
+            // A -> - At => neg
+            tokens.remove(0);
+            At();
+            buildTree("neg", 1);
+        } else {
+            if (ValueIn(peek(), "+")) {
+                // A -> + At
+                tokens.remove(0);
+            }
+            At();
+        }
+        while (ValueIn(peek(), "+", "-")) {
+            if (ValueIn(peek(), "+")) {// A -> A + At
+                tokens.remove(0);
+                At();
+                buildTree("+", 2);
+            } else { // A -> A - At
+                tokens.remove(0);
+                At();
+                buildTree("-", 2);
+            }
+        }
+        ensureValueIn(peek(), "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&", "or", "->", "|", "aug",
+                ",", "where", "EOF", ")", "and", "within", "in");
+    }
+
+    private void At() {
+        if (TypeIn(peek(), "IDENTIFIER", "INTEGER", "STRING") ||
+                ValueIn(peek(), "true", "false", "nil", "(", "dummy")) {
+            Af();
+            while (ValueIn(peek(), "*", "/")) {
+                if (ValueIn(peek(), "*")) {// At -> At * Af
+                    tokens.remove(0);
+                    Af();
+                    buildTree("*", 2);
+                } else { // At -> At / Af
+                    tokens.remove(0);
+                    Af();
+                    buildTree("/", 2);
+                }
+            }
+            ensureValueIn(peek(), "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&", "or", "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
+        }
+        else{
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
+    }
+
+    private void Af() {
+        Ap();
+    }
+
+    private void Ap() {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'EW'");
+        throw new UnsupportedOperationException("Unimplemented method 'A'");
+    }
+
+    private void R() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'A'");
+    }
+
+    private void Rn() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'A'");
     }
 
     private void D() {
         throw new UnsupportedOperationException("Unimplemented method 'D'");
     }
 
+    private void Dr() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'Dr'");
+    }
+
+    private void Vb() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'Vb'");
+    }
 }

@@ -1,1 +1,1 @@
-* Print(1)
+let G=2 in Print S(G) where S = fn x . x*2*3
