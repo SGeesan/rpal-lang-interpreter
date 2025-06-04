@@ -16,6 +16,7 @@ public class Parser {
 
     public AST buildAst() {
         E();
+        ensureValueIn(peek(), "EOF");
         return (new AST(stack.pop()));
     }
 
@@ -210,7 +211,7 @@ public class Parser {
                 Tc();
             } else {
                 // Tc -> B
-                ensureValueIn(peek(), "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+                ensureValueIn(peek(), "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
             }
         } else {
             throw new ParserException("Parse failed at: " + peek().getValue());
@@ -233,7 +234,7 @@ public class Parser {
                 }
             }
             // B -> Bt
-            ensureValueIn(peek(), "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+            ensureValueIn(peek(), "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
 
         } else {
             throw new ParserException("Parse failed at: " + peek().getValue());
@@ -256,7 +257,7 @@ public class Parser {
                 }
             }
             // Bt -> Bs
-            ensureValueIn(peek(), "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+            ensureValueIn(peek(), "or", "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
 
         } else {
             throw new ParserException("Parse failed at: " + peek().getValue());
@@ -323,7 +324,7 @@ public class Parser {
 
                 default:
                     // Bp -> A
-                    ensureValueIn(peek(), "&", "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+                    ensureValueIn(peek(), "&", "or", "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
             }
 
         } else {
@@ -394,7 +395,7 @@ public class Parser {
             rightAsTree(N);
         }
         ensureValueIn(peek(), "*", "/", "**", "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&",
-                "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+                "or", "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
     }
 
     private void Ap() {
@@ -407,7 +408,7 @@ public class Parser {
             buildTree("@", 3);
         }
         ensureValueIn(peek(), "*", "/", "**", "+", "-", "gr", ">", "ge", ">=", "ls", "<", "le", "<=", "eq", "ne", "&",
-                "or", "->", "|", "aug", ",", "where", "EoF", ")", "and", "within", "in");
+                "or", "->", "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
     }
 
     private void R() {
@@ -442,28 +443,114 @@ public class Parser {
     }
 
     private void D() {
-        throw new UnsupportedOperationException("Unimplemented method 'D'");
+        Da();
+        if (ValueIn(peek(), "within")) {
+            // D -> Da within D
+            int N = 0;
+            while (ValueIn(peek(), "within")) {
+                tokens.remove(0);
+                Da();
+                buildTree("within", 2);
+                N++;
+            }
+            rightAsTree(N);
+        } else {
+            ensureValueIn(peek(), "in",")");
+        }
     }
 
     private void Da() {
-        throw new UnsupportedOperationException("Unimplemented method 'D'");
+        Dr();
+        if (ValueIn(peek(), "and")) {
+            // Da -> (Dr and Dr)+
+            int N = 1;
+            while (ValueIn(peek(), "and")) {
+                tokens.remove(0);
+                Dr();
+                N++;
+            }
+            buildTree("and", N);
+        }
     }
 
     private void Dr() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'Dr'");
+        if (ValueIn(peek(), "rec")) {
+            tokens.remove(0);
+            Db();
+            buildTree("rec", 1);
+        } else {
+            Db();
+        }
     }
 
     private void Db() {
-        throw new UnsupportedOperationException("Unimplemented method 'D'");
+        if (ValueIn(peek(), "(")) {
+            // Db - > ( D )
+            tokens.remove(0);
+            D();
+            ensureValueIn(tokens.remove(0), ")");
+        } else if (TypeIn(peek(), "IDENTIFIER")){
+            if (tokens.size() == 1) {
+                throw new RuntimeException("Tokenizer error. EOF not found");
+            }
+            Token lookahead2 = tokens.get(1);//look at 2nd token to select the rule
+            if (ValueIn(lookahead2, "=",",")) {
+                // Db -> V1 '=' E
+                V1();
+                ensureValueIn(tokens.remove(0),"=");
+                E();
+                buildTree("=", 2);
+            } else {
+                // ’<IDENTIFIER>’ Vb+ ’=’ E => fcn_form
+                stack.push(new LeafNode("IDENTIFIER", tokens.remove(0).getValue()));
+                Vb();
+                int N=2;
+                while (TypeIn(peek(), "IDENTIFIER","R_PAREN")) {
+                    Vb();
+                    N++;
+                }
+                ensureValueIn(tokens.remove(0),"=");
+                E();
+                buildTree("fcn_form", N+1);
+            }
+        } else{
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
     }
 
     private void Vb() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'Vb'");
+        if (TypeIn(peek(), "IDENTIFIER")) {
+            // Vb -> <IDENTIFIER>
+            stack.push(new LeafNode("IDENTIFIER", tokens.remove(0).getValue()));
+        } else if(ValueIn(peek(), "(")){
+            tokens.remove(0);
+            if (ValueIn(peek(), ")")) {
+                // Vb -> ()
+                stack.push(new LeafNode("()", ""));
+            } else if(TypeIn(peek(), "IDENTIFIER")){
+                // Vb -> (V1)
+                V1();
+                ensureValueIn(tokens.remove(0), ")");
+            }
+            else{
+                throw new ParserException("Parse failed at: " + peek().getValue());
+            }
+        } else{
+            throw new ParserException("Parse failed at: " + peek().getValue());
+        }
     }
 
     private void V1() {
-        throw new UnsupportedOperationException("Unimplemented method 'D'");
+        // V1 -> ’<IDENTIFIER>’ list ’,’
+        stack.push(new LeafNode("IDENTIFIER", tokens.remove(0).getValue()));
+        if (ValueIn(peek(), ",")) {
+            int N = 1;
+            while (ValueIn(peek(), ",")) {
+                tokens.remove(0);
+                ensureTypeIn(peek(), "IDENTIFIER");
+                N++;
+            }
+            buildTree("comma", N);
+        }
     }
 }

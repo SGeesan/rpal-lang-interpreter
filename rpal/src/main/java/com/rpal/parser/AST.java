@@ -5,8 +5,11 @@ import java.util.List;
 import com.rpal.cse.CSNode;
 
 public class AST {
+	private ASTNode root;
+	private boolean standardized ;
 	public AST(ASTNode root){
-
+		this.root = root;
+		this.standardized = false;
 	}
     public void standardize() {
         // TODO Auto-generated method stub
@@ -14,8 +17,7 @@ public class AST {
     }
 
 	public void print() {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'print'");
+		root.printTree();
 	}
 
 	public List<List<CSNode>> getCS() {

@@ -38,10 +38,10 @@ public class ASTNodeTest {
         System.setOut(originalOut);
 
         String actual = outContent.toString().replace("\r\n", "\n").trim();
-        String expected = ("A\n" +
-                           ". B\n" +
-                           ". . D\n" +
-                           ". C").trim();
+        String expected = ("A \n" +
+                           ".B \n" +
+                           "..D \n" +
+                           ".C ").trim();
         
         assertEquals(expected, actual);
     }
@@ -71,9 +71,9 @@ public void testDeepLeftTree() {
     System.setOut(originalOut);
 
     String actual = outContent.toString().replace("\r\n", "\n").trim();
-    String expected = ("X\n" +
-                       ". Y\n" +
-                       ". . Z").trim();
+    String expected = ("X \n" +
+                       ".Y \n" +
+                       "..Z ").trim();
 
     assertEquals(expected, actual);
 }
@@ -103,9 +103,9 @@ public void testWideSiblingLine() {
     System.setOut(originalOut);
 
     String actual = outContent.toString().replace("\r\n", "\n").trim();
-    String expected = ("P\n" +
-                       "Q\n" +
-                       "R").trim();
+    String expected = ("P \n" +
+                       "Q \n" +
+                       "R ").trim();
 
     assertEquals(expected, actual);
 }

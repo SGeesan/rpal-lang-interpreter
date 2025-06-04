@@ -59,11 +59,11 @@ public class ASTNode {
     
         // Indent according to depth
         for (int i = 0; i < depth; i++) {
-            System.out.print(". ");
+            System.out.print(".");
         }
     
-        // Print node type
-        System.out.println(node.getType());
+        // Print node
+        node.printContent();
     
         // Recur on the child (left node = first child)
         printTreeHelper(node.getLeft(), depth + 1);
@@ -71,6 +71,21 @@ public class ASTNode {
         // Recur on the sibling (right node = next sibling)
         printTreeHelper(node.getRight(), depth);
     }
+
+
+    private void printContent() {
+        String type = this.getType();
+        String value = (this instanceof LeafNode) ? ((LeafNode) this).getValue() : "";
     
+        if (type.equals("IDENTIFIER")) {
+            System.out.println("<ID:" + value + ">");
+        } else if (type.equals("INTEGER")) {
+            System.out.println("<INT:" + value + ">");
+        } else if (type.equals("STRING")) {
+            System.out.println("<STR:" + value + ">");
+        } else {
+            System.out.println(type+ " ");
+        }
+    }
 
 }
