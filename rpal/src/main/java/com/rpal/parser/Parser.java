@@ -14,7 +14,7 @@ public class Parser {
         this.stack = new Stack<ASTNode>();
     }
 
-    public AST buildAst() {
+    public AST buildAst() throws ParserException{
         E();
         ensureValueIn(peek(), "EOF");
         return (new AST(stack.pop()));

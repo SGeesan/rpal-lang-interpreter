@@ -2,7 +2,6 @@ package com.rpal.lex;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,13 +24,9 @@ public class LexicalAnalyzer {
 
     private boolean readerClosed = false; // Ensures the reader doesn’t continue once the file ends
 
-    public LexicalAnalyzer(File file) {
+    public LexicalAnalyzer(File file) throws IOException {
         this.tokenList = new ArrayList<Token>();
-        try {
-            this.reader = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e) {
-            System.out.println("File is not found");
-        }
+        this.reader = new BufferedReader(new FileReader(file));
 
         String nextChr = null; // Holds the character just read
         String buffer = null; // Temporarily keeps characters that were read too early
@@ -67,8 +62,9 @@ public class LexicalAnalyzer {
      * 
      * @param nextChr the current character to examine
      * @param buffer  holds any character that was read but not yet processed
-     */
-    private void constructToken(String nextChr, String buffer) {
+          * @throws IOException 
+          */
+         private void constructToken(String nextChr, String buffer) throws IOException {
         Token token = new Token();
         String value = "";
 
@@ -226,22 +222,19 @@ public class LexicalAnalyzer {
      * Reads one character from the input file and converts it to a string
      * 
      * @return the next character or null if at end of file
-     */
-    private String nextChr() {
+          * @throws IOException 
+          */
+         private String nextChr() throws IOException {
         String nextChr = null;
-        try {
-            if (readerClosed) {
-                return null; // Do not read if the file stream is already shut
-            }
-            int chr = reader.read(); // Fetch the next byte from the input
-            if (chr != -1) { // If not EOF
-                nextChr = Character.toString((char) chr);
-            } else {
-                readerClosed = true; // Prevent further reads if finished
-                reader.close(); // Close the file stream
-            }
-        } catch (IOException e) {
-            System.out.println("Error reading file");
+        if (readerClosed) {
+            return null; // Do not read if the file stream is already shut
+        }
+        int chr = reader.read(); // Fetch the next byte from the input
+        if (chr != -1) { // If not EOF
+            nextChr = Character.toString((char) chr);
+        } else {
+            readerClosed = true; // Prevent further reads if finished
+            reader.close(); // Close the file stream
         }
         return nextChr;
     }

@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 import com.rpal.cse.CSE;
@@ -7,12 +8,13 @@ import com.rpal.lex.LexicalAnalyzer;
 import com.rpal.lex.Token;
 import com.rpal.parser.AST;
 import com.rpal.parser.Parser;
+import com.rpal.parser.ParserException;
 
 public class myrpal {
     public static void main(String[] args) {
         // Check if a filename is given
         if (args.length < 1) {
-            System.out.println("Usage: java com.rpal.Main <sourcefile.rpal>");
+            System.out.println("Usage: java myrpal [-st] [-ast] <sourcefile>");
             return;
         }
         
@@ -35,14 +37,30 @@ public class myrpal {
 
         // Generate the lexical analyser targeting given file
         File file = new File(filename);
-        LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(file);
+        LexicalAnalyzer lexicalAnalyzer;
+        try {
+            lexicalAnalyzer = new LexicalAnalyzer(file);
+        } catch (FileNotFoundException e) {
+            System.out.println("File is not found : "+filename);
+            return;
+        } catch (Exception e) {
+            System.out.println("Read Error Occured.");
+            return;
+        }
 
         // Tokanize the input
         List<Token> tokenList = lexicalAnalyzer.getTokenList();
         
         // Build AST
         Parser parser = new Parser(tokenList);
-        AST tree = parser.buildAst();
+        AST tree;
+        try {
+            tree = parser.buildAst();
+        }
+        catch (ParserException e) {
+            System.out.println("Syntax Error : \n"+e.getMessage());
+            return;
+        }
         //Print if required
         if (astSwitch) {
             tree.print();
@@ -61,6 +79,5 @@ public class myrpal {
         // Interpret
         CSE cse_machine = new CSE(controlList);
         cse_machine.runCSE();
-        System.out.println();
     }
 }
