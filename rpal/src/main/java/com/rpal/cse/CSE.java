@@ -76,6 +76,10 @@ public class CSE {
     public CSNode lookUpEnv(EnvironmentTree envtree, int env_no, String variable) {
         CSNode envVar = envtree.getEnvNode(env_no).getVariable();
         
+        if (envVar==null){
+            throw new CSE_Exception("Undefined variable : "+variable);
+        }
+
         // Retrieve the list of variable names defined in this environment
         List<String> varList = envVar.getLambdavar();
 

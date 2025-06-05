@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 import com.rpal.cse.CSE;
+import com.rpal.cse.CSE_Exception;
 import com.rpal.cse.CSNode;
 import com.rpal.lex.LexicalAnalyzer;
 import com.rpal.lex.Token;
@@ -78,6 +79,10 @@ public class myrpal {
 
         // Interpret
         CSE cse_machine = new CSE(controlList);
-        cse_machine.runCSE();
+        try {
+            cse_machine.runCSE();
+        } catch (CSE_Exception e) {
+            System.out.println("Evaluation failed: \n"+e.getMessage());
+        }
     }
 }
