@@ -83,6 +83,8 @@ public class ASTNode {
             System.out.println("<INT:" + value + ">");
         } else if (type.equals("STRING")) {
             System.out.println("<STR:" + value + ">");
+        } else if (type.equals("fcn")){
+            System.out.println("function_form ");
         } else {
             System.out.println(type+ " ");
         }

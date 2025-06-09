@@ -60,7 +60,6 @@ public class Functions {
                 System.out.print("[lambda closure: ");
                 for (int i = 0; i < node.getLambdavar().size(); i++) {
                     System.out.print(node.getLambdavar().get(i));
-                    // TODO: Handle formatting for multiple variables if needed
                 }
                 System.out.print(": ");
                 System.out.print(node.getLambdano());
