@@ -34,7 +34,7 @@ public class Functions {
             case "NIL":
                 // Replace escape sequences for newline and tab
                 if (node.getName().contains("\\n")) {
-                    node.setName(node.getName().replace("\\n", "\n"));
+                    node.setName(node.getName().replace("\\n", System.lineSeparator()));
                 }
                 if(node.getName().contains("\\t")) {
                     node.setName(node.getName().replace("\\t", "\t"));

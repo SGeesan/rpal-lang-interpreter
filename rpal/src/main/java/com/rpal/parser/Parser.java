@@ -209,6 +209,7 @@ public class Parser {
                 ensureValueIn(peek(), "|");
                 tokens.remove(0);
                 Tc();
+                buildTree("->", 3);
             } else {
                 // Tc -> B
                 ensureValueIn(peek(), "|", "aug", ",", "where", "EOF", ")", "and", "within", "in");
@@ -505,7 +506,7 @@ public class Parser {
                 stack.push(new LeafNode("IDENTIFIER", tokens.remove(0).getValue()));
                 Vb();
                 int N=2;
-                while (TypeIn(peek(), "IDENTIFIER","R_PAREN")) {
+                while (TypeIn(peek(), "IDENTIFIER","L_PAREN")) {
                     Vb();
                     N++;
                 }
@@ -526,6 +527,7 @@ public class Parser {
             tokens.remove(0);
             if (ValueIn(peek(), ")")) {
                 // Vb -> ()
+                tokens.remove(0);
                 stack.push(new LeafNode("()", ""));
             } else if(TypeIn(peek(), "IDENTIFIER")){
                 // Vb -> (V1)
@@ -548,6 +550,7 @@ public class Parser {
             while (ValueIn(peek(), ",")) {
                 tokens.remove(0);
                 ensureTypeIn(peek(), "IDENTIFIER");
+                stack.push(new LeafNode("IDENTIFIER", tokens.remove(0).getValue()));
                 N++;
             }
             buildTree("comma", N);

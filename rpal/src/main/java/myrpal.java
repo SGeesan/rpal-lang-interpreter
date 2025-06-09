@@ -84,5 +84,6 @@ public class myrpal {
         } catch (CSE_Exception e) {
             System.out.println("Evaluation failed: \n"+e.getMessage());
         }
+        System.out.println();
     }
 }
